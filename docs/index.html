@@ -102,7 +102,7 @@ a{color:var(--accent)}
  </div>
  <div class="legend"><span>0</span><span class="bar" id="lbar"></span><span>28 m/s</span><span style="margin-left:12px">lines: sea level pressure, every 4 hPa</span></div>
 </div>
-<p class="hint">"What happened" is ERA5, ECMWF's reconstruction of past weather. The forecasts are the runs issued one day earlier, as a trader would have seen them. Grid spacing is 0.5 degrees. AIFS has no archive before February 2025, so it is greyed out for January 2025.</p>
+<p class="hint">"What happened" is ERA5, the European weather centre's replay of past weather: a forecast model rerun over every measurement on record, from stations, weather balloons, aircraft and satellites, hour by hour since 1940. It is the closest thing to an answer key for a weather map, though smoother than reality, with about 30 km between grid points. The forecasts are the runs issued one day earlier, as a trader would have seen them. Grid spacing is 0.5 degrees. AIFS has no archive before February 2025, so it is greyed out for January 2025.</p>
 
 <h2>Anatomy of the storm</h2>
 <p>The particle map shows one field at a time. The four maps below take the Easter storm apart: where the low went, how strong its winds were at their peak, where each day-ahead forecast was wrong, and when the strongest wind reached each part of Denmark. Every map can be switched to the January 2025 storm.</p>
@@ -136,6 +136,7 @@ a{color:var(--accent)}
   <div class="seg" id="err-src"><button data-k="ifs">IFS</button><button data-k="aifs" class="on">AIFS (AI)</button><button data-k="knmi">KNMI HARMONIE</button></div>
  </div>
  <div class="controls"><button class="play" id="err-play">Play</button><input type="range" id="err-t" min="0" max="71" value="31"><span class="readout" id="err-when"></span></div>
+ <p class="hint" style="margin:0;padding:8px 12px 0"><strong>Blue: forecast too weak. Red: forecast too strong. White: right.</strong> Watch the dashed storm core: it turns blue in every model, because all of them under-forecast the strongest winds.</p>
  <div class="legend"><span>forecast weaker</span><span class="bar" id="lbar3"></span><span>forecast stronger</span><span style="margin-left:6px">&plusmn;5 m/s</span></div>
  <div class="legend" id="err-stat" style="padding-top:0"></div>
 </div>
@@ -171,7 +172,7 @@ a{color:var(--accent)}
 <p class="cap">Day-ahead 100 m wind error at the 34 forecast sites against ERA5, March 2025 to October 2026. Circle size is the root mean square error; colour is the mean bias, red where the forecast is too strong and blue where it is too weak. Click a site to see the blend's bias by the direction the wind blows from (ERA5 at 100 m); petal length is the size of the bias and the faint fan shows how often the wind comes from each direction.</p>
 
 <h2>Blending beats every single model</h2>
-<p>Each model's winds at 34 wind-farm sites were turned into a power forecast with a gradient-boosted mapping, trained on 2025 and tested on 2026. The blend is the plain average of the eight forecasts. It beats every model on its own, and Energinet's own day-ahead forecast, in both price areas.</p>
+<p>Each model's winds at 34 wind-farm sites were turned into a power forecast with a gradient-boosted mapping, trained on 2025 and tested on 2026. The blend is the plain average of the eight power forecasts, each with equal weight. The weighted mix instead learns how much to trust each model, from the training year. It beats every model on its own, and Energinet's own day-ahead forecast, in both price areas.</p>
 <table id="ptable"><thead><tr><th>Forecast, test Jan to Oct 2026</th><th style="text-align:right">DK1 error</th><th style="text-align:right">DK2 error</th></tr></thead><tbody></tbody></table>
 <p class="hint">Error is mean absolute error as a percentage of installed capacity. Energinet's forecast is rescaled on 2025 so that it is judged fairly. Its DK1 offshore series is capped near 1,000 MW while the fleet peaks near 2,000 MW, so DK2 is the cleaner comparison.</p>
 
@@ -264,7 +265,7 @@ function stationMap(S,coast){const w=860,h=Math.round(w/1.118),X=lon=>(lon-LON0)
  box.querySelectorAll('circle[data-n]').forEach(c=>{c.onmouseenter=e=>{const t=$('#tip2'),r=box.getBoundingClientRect();t.style.display='block';
   t.style.left=(e.clientX-r.left+12)+'px';t.style.top=(e.clientY-r.top+12)+'px';t.innerHTML=`<b>${c.dataset.n}</b><br>best: ${c.dataset.m}<br><span class="num">${c.dataset.e} m/s</span> mean error`};
   c.onmouseleave=()=>$('#tip2').style.display='none'})}
-function tables(S){const lab=f=>({blend_equal:'Blend: average of 8 models',blend_stacked:'Blend: one joint model',energinet_dayahead_recal:'Energinet day-ahead (rescaled)',energinet_dayahead_raw:'Energinet day-ahead (as published)'}[f]||S.names[f]||f);
+function tables(S){const lab=f=>({blend_equal:'Average of the 8 corrected models',blend_stacked:'Weighted mix of the 8 (learned weights)',energinet_dayahead_recal:'Energinet day-ahead (rescaled)',energinet_dayahead_raw:'Energinet day-ahead (as published)'}[f]||S.names[f]||f);
  const a=Object.fromEntries(S.power.DK1.map(r=>[r.forecast,r.nmae_pct])),b=Object.fromEntries(S.power.DK2.map(r=>[r.forecast,r.nmae_pct]));
  const keys=Object.keys(a).sort((x,y)=>(a[x]+b[x])-(a[y]+b[y]));const best=Math.min(...keys.map(k=>a[k]+b[k]));
  $('#ptable tbody').innerHTML=keys.map(k=>`<tr class="${a[k]+b[k]===best?'best':''}"><td>${lab(k)}</td><td class="n">${a[k].toFixed(1)}%</td><td class="n">${b[k].toFixed(1)}%</td></tr>`).join('');
@@ -431,7 +432,7 @@ function drawRose(){const s=SE.sites[seSel],sc=72/1.5,fr=Math.max(...s.rose_freq
  const b=s.rose_bias.map((v,i)=>[v,i]).filter(q=>q[0]!=null).sort((a,c)=>Math.abs(c[0])-Math.abs(a[0]))[0],dir=['north','north-northeast','east-northeast','east','east-southeast','south-southeast','south','south-southwest','west-southwest','west','west-northwest','north-northwest'][b[1]];
  document.getElementById('site-txt').innerHTML=`<b>${SITE_NAME[seSel]}</b>, ${OFFSHORE.has(seSel)?'offshore farm':'onshore cluster'}. Blend of 8 models: RMSE <span class="num">${s.blend[0].toFixed(2)}</span> m/s, mean bias <span class="num">${(s.blend[1]>0?'+':'')+s.blend[1].toFixed(2)}</span> m/s over <span class="num">${s.n.toLocaleString('en')}</span> hours. The bias is largest, <span class="num">${(b[0]>0?'+':'')+b[0].toFixed(1)}</span> m/s, when the wind blows from the ${dir}.<br><span style="color:var(--soft)">Red petals: forecast too strong; blue: too weak.</span>`}
 function siteTakeaway(){const ents=Object.entries(SE.sites).map(([k,s])=>[k,s.blend[0]]).sort((a,b)=>b[1]-a[1]),top=ents.slice(0,4),rest=ents.slice(4).map(q=>q[1]).sort((a,b)=>a-b),med=rest[Math.floor(rest.length/2)];
- document.getElementById('tk-site').textContent=`The blend's 100 m wind is least accurate at ${top.map(q=>SITE_NAME[q[0]]).slice(0,3).join(', ')} and ${SITE_NAME[top[3][0]]}, about ${(top.reduce((a,q)=>a+q[1],0)/4).toFixed(1)} m/s against ${med.toFixed(1)} m/s at the typical site, where models and ERA5 draw the coastline differently.`}
+ document.getElementById('tk-site').textContent=`The blend's 100 m wind is least accurate at ${top.map(q=>SITE_NAME[q[0]]).slice(0,3).join(', ')} and ${SITE_NAME[top[3][0]]}, about ${(top.reduce((a,q)=>a+q[1],0)/4).toFixed(1)} m/s against ${med.toFixed(1)} m/s at the typical site. A weather model sees the map as squares 9 to 30 km wide, each labelled land or sea. Small islands and coastal points fall into squares one model calls sea, with smooth fast wind, and another calls land, with rough slower wind, so the same spot gets very different forecasts.`}
 
 async function anatomy(){
  [['lbar2',col,28],['lbar4',col,28]].forEach(([id])=>document.getElementById(id).style.background=document.getElementById('lbar').style.background);
