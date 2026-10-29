@@ -38,7 +38,7 @@ p{margin:0 0 14px}
 input[type=range]{flex:1;min-width:160px;accent-color:var(--ink)}
 .play{font:500 12px var(--sans);border:1px solid var(--rule);background:#fff;padding:6px 10px;cursor:pointer;border-radius:3px}
 .readout{font:500 12px var(--mono);color:var(--soft);min-width:150px}
-.legend{display:flex;align-items:center;gap:8px;font:11px var(--mono);color:var(--soft);padding:0 12px 10px}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font:11px var(--mono);color:var(--soft);padding:0 12px 10px}
 .legend .bar{height:8px;width:180px;border-radius:2px}
 .hint{font-size:13px;color:var(--soft);margin:6px 0 0}
 figure{margin:20px 0}
@@ -55,6 +55,23 @@ tr.best td{font-weight:600}
 .tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--rule);padding:6px 8px;font:12px var(--sans);box-shadow:0 2px 6px rgba(0,0,0,.08);display:none;z-index:5}
 footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--rule);font-size:13px;color:var(--soft)}
 a{color:var(--accent)}
+.takeaway{font:500 18px/1.45 var(--serif);color:var(--ink);margin:30px 0 6px}
+.cap{font-size:13.5px;color:var(--soft);margin:8px 0 0;line-height:1.5}
+.cv{position:relative;width:100%}
+.cv canvas{position:absolute;inset:0;width:100%;height:100%}
+.multi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--rule)}
+.multi .cell{background:#fff;padding:8px 8px 6px}
+.multi .ttl{font:500 12px var(--sans);display:flex;justify-content:space-between;gap:6px;margin-bottom:4px}
+.multi .ttl span:last-child{font:500 11px var(--mono);color:var(--soft);text-align:right}
+.hov{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(0,1fr);gap:0 8px;padding:10px 12px 4px}
+.hov .ttl{font:500 12px var(--sans);margin-bottom:4px}
+.axl{font:10px var(--mono);color:var(--soft)}
+.siterow{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:10px 12px;border-top:1px solid var(--rule)}
+#sitemap .siterow svg{width:190px;height:190px;flex:none;background:none}
+.siterow .txt{flex:1;min-width:200px;font-size:13.5px;line-height:1.5}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px;vertical-align:-1px}
+#sitemap svg{width:100%;height:auto;display:block;background:#e9eff5}
+@media (max-width:520px){.axl .m{visibility:hidden}#err-stat{display:block}#err-stat span{display:block;margin-left:0!important}.multi .ttl{flex-direction:column;gap:0}.hov{grid-template-columns:26px minmax(0,1fr) minmax(0,1fr);padding:8px 6px 4px;gap:0 5px}.legend .bar{width:110px}}
 </style>
 </head>
 <body>
@@ -87,6 +104,54 @@ a{color:var(--accent)}
 </div>
 <p class="hint">"What happened" is ERA5, ECMWF's reconstruction of past weather. The forecasts are the runs issued one day earlier, as a trader would have seen them. Grid spacing is 0.5 degrees. AIFS has no archive before February 2025, so it is greyed out for January 2025.</p>
 
+<h2>Anatomy of the storm</h2>
+<p>The particle map shows one field at a time. The four maps below take the Easter storm apart: where the low went, how strong its winds were at their peak, where each day-ahead forecast was wrong, and when the strongest wind reached each part of Denmark. Every map can be switched to the January 2025 storm.</p>
+
+<p class="takeaway" id="tk-track">The day-ahead forecasts put the low in nearly the right place.</p>
+<div class="map-card">
+ <div class="cv" id="trk-wrap" style="aspect-ratio:1.074"><canvas id="trk"></canvas><div class="tip" id="tip3"></div></div>
+ <div class="controls">
+  <div class="seg" id="trk-storm"><button data-s="easter2026" class="on">Easter 2026</button><button data-s="jan2025">7 Jan 2025</button></div>
+  <span id="trk-key" style="font-size:12px"></span>
+ </div>
+ <div class="controls"><button class="play" id="trk-play">Play</button><input type="range" id="trk-t" min="0" max="71" value="30"><span class="readout" id="trk-when"></span></div>
+</div>
+<p class="cap">Track of the low pressure centre, taken as the minimum of sea level pressure on a 1.5 degree grid and refined between grid points, for ERA5 and for each forecast issued the day before. Dots mark every six hours; the large dots mark the hour on the slider. Grey lines are ERA5 isobars at that hour, every 4 hPa. The dashed box is the area of the other storm maps.</p>
+
+<p class="takeaway" id="tk-foot">AIFS came closest on average, but cut the strongest winds out of the storm.</p>
+<div class="map-card">
+ <div class="multi" id="foot"></div>
+ <div class="controls">
+  <div class="seg" id="foot-storm"><button data-s="easter2026" class="on">Easter 2026</button><button data-s="jan2025">7 Jan 2025</button></div>
+ </div>
+ <div class="legend"><span>0</span><span class="bar" id="lbar2"></span><span>28 m/s</span><span style="margin-left:12px">line: 27 m/s</span></div>
+</div>
+<p class="cap">Storm footprint: the strongest 100 m wind at each grid point over the three days of the storm. The top left panel is ERA5; the others are the forecasts issued one day earlier. The number in each panel is the area where the strongest wind reached 27 m/s, in thousands of square kilometres.</p>
+
+<p class="takeaway" id="tk-err">Every forecast was too weak in the core of the storm, and each was wrong in its own place.</p>
+<div class="map-card">
+ <div class="map-wrap" id="err-wrap"><canvas id="err"></canvas><div class="tip" id="tip4"></div></div>
+ <div class="controls">
+  <div class="seg" id="err-storm"><button data-s="easter2026" class="on">Easter 2026</button><button data-s="jan2025">7 Jan 2025</button></div>
+  <div class="seg" id="err-src"><button data-k="ifs">IFS</button><button data-k="aifs" class="on">AIFS (AI)</button><button data-k="knmi">KNMI HARMONIE</button></div>
+ </div>
+ <div class="controls"><button class="play" id="err-play">Play</button><input type="range" id="err-t" min="0" max="71" value="31"><span class="readout" id="err-when"></span></div>
+ <div class="legend"><span>forecast weaker</span><span class="bar" id="lbar3"></span><span>forecast stronger</span><span style="margin-left:6px">&plusmn;5 m/s</span></div>
+ <div class="legend" id="err-stat" style="padding-top:0"></div>
+</div>
+<p class="cap">Forecast minus ERA5 wind speed at 100 m, hour by hour, for the run issued the day before. Blue: the forecast was too weak; red: too strong. The dashed line encloses the area where ERA5 wind exceeded 20 m/s, the core of the storm. Grey lines are ERA5 isobars, every 4 hPa.</p>
+
+<p class="takeaway" id="tk-hov">The strongest wind crossed Denmark from west to east in about ten hours.</p>
+<div class="map-card">
+ <div class="hov" id="hov"></div>
+ <div class="controls">
+  <div class="seg" id="hov-storm"><button data-s="easter2026" class="on">Easter 2026</button><button data-s="jan2025">7 Jan 2025</button></div>
+  <div class="seg" id="hov-src"><button data-k="ifs">IFS</button><button data-k="aifs" class="on">AIFS (AI)</button><button data-k="knmi">KNMI HARMONIE</button></div>
+ </div>
+ <div class="legend"><span>0</span><span class="bar" id="lbar4"></span><span>28 m/s</span></div>
+</div>
+<p class="cap">Hovm&ouml;ller diagram: 100 m wind speed averaged over the latitudes of Denmark (54.5 to 57.5 N), by longitude (across) and hour (down). A storm moving east draws a band sloping down to the right. The black line marks the hour of the strongest wind at each longitude in ERA5; the coloured line marks the same in the forecast.</p>
+
 <h2>Which model is best depends on the truth you pick</h2>
 <p>Every model was scored on day-ahead wind from March 2025 to October 2026, in two ways. Against ERA5 at 100 m, ECMWF's AI model AIFS wins clearly. Against real anemometers at 36 DMI stations, it drops to fifth and DWD's ICON-EU comes first.</p>
 <p>The reason is smoothing. ERA5 is a smooth field, and AIFS was trained on it, so AIFS is rewarded for being smooth. Real anemometers see gusts and local effects that a smooth forecast misses. A desk that scores models only against reanalysis will pick the wrong one.</p>
@@ -96,6 +161,14 @@ a{color:var(--accent)}
 <h3 style="font:500 19px var(--serif);margin:28px 0 6px">Station by station</h3>
 <p>The best model changes with the place. Hover over a station to see which model forecast it best.</p>
 <div class="map-card" id="stations" style="position:relative"><div class="tip" id="tip2"></div></div>
+
+<p class="takeaway" id="tk-site">The blend's wind errors are largest where land meets sea, on islands and coastal points.</p>
+<div class="map-card" id="sitemap" style="position:relative"><div class="tip" id="tip5"></div>
+ <div class="controls" style="border-top:0;border-bottom:1px solid var(--rule)"><div class="seg" id="site-src"></div></div>
+ <div id="site-svg"></div>
+ <div class="siterow"><svg id="rose" viewBox="-100 -100 200 200"></svg><div class="txt" id="site-txt"></div></div>
+</div>
+<p class="cap">Day-ahead 100 m wind error at the 34 forecast sites against ERA5, March 2025 to October 2026. Circle size is the root mean square error; colour is the mean bias, red where the forecast is too strong and blue where it is too weak. Click a site to see the blend's bias by the direction the wind blows from (ERA5 at 100 m); petal length is the size of the bias and the faint fan shows how often the wind comes from each direction.</p>
 
 <h2>Blending beats every single model</h2>
 <p>Each model's winds at 34 wind-farm sites were turned into a power forecast with a gradient-boosted mapping, trained on 2025 and tested on 2026. The blend is the plain average of the eight forecasts. It beats every model on its own, and Energinet's own day-ahead forecast, in both price areas.</p>
@@ -202,7 +275,193 @@ function tables(S){const lab=f=>({blend_equal:'Blend: average of 8 models',blend
  const g=S.gale.filter(r=>r.area==='DK2'&&r.subset==='gale >15, price <= 0'),base=g.find(r=>r.model==='baseline'),post=g.find(r=>r.model.startsWith('after'));
  if(base&&post)$('#galefix').textContent=`Knowing the price would fix most of it, but the price is set at the 12:00 auction, after the 10:30 forecast is made. Using it would be look-ahead for the day-ahead forecast. It is fair only for intraday trading after the auction, where adding it cuts the DK2 error in those hours from ${base.nmae_pct.toFixed(0)}% to ${post.nmae_pct.toFixed(0)}% of capacity. A first attempt to predict negative prices at 10:30 ranked the risky hours well but gave probabilities too low to act on, so before the auction these hours remain the open problem.`}
 (async()=>{const [c,s]=await Promise.all([fetch('data/coast.json').then(r=>r.json()),fetch('data/summary.json').then(r=>r.json())]);coast=c;
- stationMap(s,c);tables(s);await loadStorm('easter2026');resize();window.addEventListener('resize',resize);requestAnimationFrame(step);requestAnimationFrame(tick)})();
+ stationMap(s,c);tables(s);await loadStorm('easter2026');resize();window.addEventListener('resize',resize);requestAnimationFrame(step);requestAnimationFrame(tick);anatomy()})();
+/* ---------- Anatomy of the storm and site errors ---------- */
+const SRC_COL={era5:'#1a1d21',ifs:'#1d5fa8',aifs:'#c2410c',knmi:'#15803d'};
+const SRC_NAME={era5:'ERA5',ifs:'IFS',aifs:'AIFS (AI)',knmi:'KNMI HARMONIE'};
+const DIV=[[-1,[33,102,172]],[-.5,[103,169,207]],[-.19,[209,229,240]],[0,[247,247,247]],[.19,[253,219,199]],[.5,[239,138,98]],[1,[178,24,43]]];
+function divCol(v,lim){const x=Math.max(-1,Math.min(1,v/lim));for(let i=1;i<DIV.length;i++)if(x<=DIV[i][0]){const [a,ca]=DIV[i-1],[b,cb]=DIV[i],t=(x-a)/(b-a);return ca.map((c,j)=>Math.round(c+t*(cb[j]-c)))}return DIV[DIV.length-1][1]}
+const rgb=c=>`rgb(${c})`;
+async function getStorm(s){if(!storms[s])storms[s]=await (await fetch(`data/storm_${s}.json`)).json();return storms[s]}
+function fit(c){const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=Math.max(1,Math.round(r.width*d));c.height=Math.max(1,Math.round(r.height*d));const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);return [x,r.width,r.height]}
+function proj(box,W,H){const [x0,y0,x1,y1]=box;return{x:l=>(l-x0)/(x1-x0)*W,y:b=>(y1-b)/(y1-y0)*H,lon:px=>x0+px/W*(x1-x0),lat:py=>y1-py/H*(y1-y0)}}
+function sampleG(arr,lon,lat,m){const dl=m.lon[1]-m.lon[0],nx=m.lon.length,ny=m.lat.length,x=(lon-m.lon[0])/dl,y=(lat-m.lat[0])/(m.lat[1]-m.lat[0]);
+ if(x<0||y<0||x>nx-1||y>ny-1)return null;const i=Math.min(Math.floor(x),nx-2),j=Math.min(Math.floor(y),ny-2),a=x-i,b=y-j;
+ const q=[arr[j*nx+i],arr[j*nx+i+1],arr[(j+1)*nx+i],arr[(j+1)*nx+i+1]];if(q.some(v=>v==null))return null;
+ return (1-a)*(1-b)*q[0]+a*(1-b)*q[1]+(1-a)*b*q[2]+a*b*q[3]}
+function paint(ctx,W,H,P,fn,cf,res){const gw=res||150,gh=Math.max(2,Math.round(gw*H/W)),img=ctx.createImageData(gw,gh);
+ for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){const v=fn(P.lon((x+.5)/gw*W),P.lat((y+.5)/gh*H));if(v==null)continue;img.data.set([...cf(v),255],(y*gw+x)*4)}
+ const off=document.createElement('canvas');off.width=gw;off.height=gh;off.getContext('2d').putImageData(img,0,0);ctx.imageSmoothingEnabled=true;ctx.drawImage(off,0,0,W,H)}
+function coastDraw(ctx,rings,P,fill,stroke,lw){ctx.lineWidth=lw||.8;ctx.strokeStyle=stroke;ctx.fillStyle=fill;
+ for(const r of rings){ctx.beginPath();r.forEach(([x,y],i)=>i?ctx.lineTo(P.x(x),P.y(y)):ctx.moveTo(P.x(x),P.y(y)));ctx.closePath();if(fill)ctx.fill();ctx.stroke()}}
+/* contour lines of a gridded field: fn(lon,lat) sampled on a fine lattice over the box */
+function contourLines(ctx,W,H,P,box,fn,th,style,label){const N=Math.round(Math.min(160,W/4)),M=Math.max(2,Math.round(N*H/W)),g=new Float64Array(N*M);let ok=true;
+ for(let j=0;j<M;j++)for(let i=0;i<N;i++){const v=fn(box[0]+i/(N-1)*(box[2]-box[0]),box[3]-j/(M-1)*(box[3]-box[1]));if(v==null){ok=false;g[j*N+i]=NaN}else g[j*N+i]=v}
+ const vals=Array.from(g).filter(v=>!isNaN(v));if(!vals.length)return;const mean=vals.reduce((a,b)=>a+b,0)/vals.length;for(let k=0;k<g.length;k++)if(isNaN(g[k]))g[k]=mean;
+ const thr=typeof th==='function'?th(vals):th,cs=d3.contours().size([N,M]).thresholds(thr)(Array.from(g));const sx=W/(N-1),sy=H/(M-1);
+ ctx.save();Object.assign(ctx,style);if(style.dash)ctx.setLineDash(style.dash);
+ for(const c of cs){let lab=null;for(const poly of c.coordinates)for(const ring of poly){ctx.beginPath();
+  ring.forEach(([x,y],i)=>{const X=(x-.5)*sx,Y=(y-.5)*sy;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);if(label&&!lab&&X>26&&X<W-26&&Y>14&&Y<H-14&&i%50==25)lab=[X,Y]});ctx.stroke()}
+  if(lab){ctx.setLineDash([]);ctx.font='10px IBM Plex Mono';ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(lab[0]-13,lab[1]-7,26,13);ctx.fillStyle='#5b6470';ctx.fillText(c.value,lab[0]-12,lab[1]+4);if(style.dash)ctx.setLineDash(style.dash)}}
+ ctx.restore()}
+const isoTh=v=>{const lo=Math.floor(Math.min(...v)/4)*4,hi=Math.ceil(Math.max(...v)/4)*4,t=[];for(let q=lo;q<=hi;q+=4)t.push(q);return t};
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const tlab=t=>{const d=new Date(t+':00Z');return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]} ${t.slice(11,16)} UTC`};
+const tshort=t=>{const d=new Date(t+':00Z');return `${DAYS[d.getUTCDay()]} ${t.slice(11,13)}`};
+const wsCache={};
+function wsOf(s,k,t){const key=s+k+t;if(!wsCache[key]){const d=storms[s][k];wsCache[key]=d.u[t].map((u,i)=>Math.hypot(u,d.v[t][i]))}return wsCache[key]}
+function segWire(id,cb){const el=document.getElementById(id);el.onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));cb(b.dataset.s||b.dataset.k)}}
+function setDisabled(id,s){document.querySelectorAll('#'+id+' button').forEach(b=>{b.disabled=!storms[s][b.dataset.k]});
+ const on=document.querySelector('#'+id+' button.on');if(on&&on.disabled){on.classList.remove('on');const f=document.querySelector('#'+id+' button:not(:disabled)');f.classList.add('on');return f.dataset.k}return on?on.dataset.k:null}
+const BOX=[LON0,LAT0,LON1,LAT1];
+function km(a,b){const R=6371,r=Math.PI/180,dlat=(b[1]-a[1])*r,dlon=(b[0]-a[0])*r,h=Math.sin(dlat/2)**2+Math.cos(a[1]*r)*Math.cos(b[1]*r)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+
+/* 1. Storm track */
+let TR=null,CW=null,trS='easter2026',trT=30,trPlay=false;
+const TBOX=[-6,50,24,65];
+function trackStats(s){const d=TR[s],out={};const e=Object.fromEntries(d.era5.track.map(q=>[q[0],q]));
+ for(const k of ['ifs','aifs','knmi']){if(!d[k])continue;const ds=[],dp=[];for(const q of d[k].track){const r=e[q[0]];if(r){ds.push(km([q[1],q[2]],[r[1],r[2]]));dp.push(q[3]-r[3])}}
+  if(ds.length)out[k]={km:ds.reduce((a,b)=>a+b,0)/ds.length,dp:dp.reduce((a,b)=>a+b,0)/dp.length,n:ds.length}}return out}
+function drawTrack(){const c=document.getElementById('trk');const [ctx,W,H]=fit(c),P=proj(TBOX,W,H),d=TR[trS],m=d.meta;
+ ctx.fillStyle='#e9eff5';ctx.fillRect(0,0,W,H);coastDraw(ctx,CW,P,'#fbfaf7','#8b95a1',.7);
+ contourLines(ctx,W,H,P,TBOX,(lon,lat)=>sampleG(d.era5.p[trT],lon,lat,m),isoTh,{strokeStyle:'rgba(91,100,112,.75)',lineWidth:.9},true);
+ ctx.save();ctx.setLineDash([4,3]);ctx.strokeStyle='#5b6470';ctx.lineWidth=1;ctx.strokeRect(P.x(LON0),P.y(LAT1),P.x(LON1)-P.x(LON0),P.y(LAT0)-P.y(LAT1));ctx.restore();
+ const keys=['knmi','ifs','aifs','era5'].filter(k=>d[k]&&d[k].track.length);
+ for(const k of keys){const tr=d[k].track,col=SRC_COL[k],main=k==='era5';
+  ctx.strokeStyle='#fff';ctx.lineWidth=main?5:4;ctx.beginPath();tr.forEach((q,i)=>i?ctx.lineTo(P.x(q[1]),P.y(q[2])):ctx.moveTo(P.x(q[1]),P.y(q[2])));ctx.stroke();
+  ctx.strokeStyle=col;ctx.lineWidth=main?2.4:1.8;if(!main)ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
+  const labs=[];for(const q of tr){if(m.time[q[0]].slice(11,13)%6)continue;ctx.beginPath();ctx.arc(P.x(q[1]),P.y(q[2]),main?3.2:2.6,0,7);ctx.fillStyle=col;ctx.fill();
+   if(main&&W>420){ctx.font='10.5px IBM Plex Mono';const t=tshort(m.time[q[0]]),tw=ctx.measureText(t).width,X=P.x(q[1])+6,Y=P.y(q[2])+14;if(labs.some(([a,b])=>Math.abs(a-X)<tw+8&&Math.abs(b-Y)<16))continue;labs.push([X,Y]);ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(X-2,Y-10,tw+4,13);ctx.fillStyle='#1a1d21';ctx.fillText(t,X,Y)}}
+  const q=tr.find(q=>q[0]===trT);if(q){ctx.beginPath();ctx.arc(P.x(q[1]),P.y(q[2]),main?8:6.5,0,7);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+   if(main){ctx.fillStyle='#fff';ctx.font='600 10px IBM Plex Sans';ctx.fillText('L',P.x(q[1])-3,P.y(q[2])+3.5)}}}
+ const e=d.era5.track.find(q=>q[0]===trT);let txt=tlab(m.time[trT]);
+ if(e){txt+=` · ERA5 low ${e[3].toFixed(0)} hPa`;for(const k of ['ifs','aifs','knmi']){const q=d[k]&&d[k].track.find(q=>q[0]===trT);if(q)txt+=` · ${SRC_NAME[k].split(' ')[0]} ${Math.round(km([q[1],q[2]],[e[1],e[2]]))} km off`}}
+ else txt+=' · low outside the map';document.getElementById('trk-when').textContent=txt;
+ document.getElementById('trk-key').innerHTML=keys.slice().reverse().map(k=>`<span class="swatch" style="background:${SRC_COL[k]}"></span>${k==='era5'?'ERA5, what happened':SRC_NAME[k]+', day before'}`).join('')+(d.aifs?'':'<span style="color:var(--faint);margin-left:10px">AIFS: no archive</span>')+(d.knmi?'':'<span style="color:var(--faint);margin-left:10px">KNMI HARMONIE: no pressure in the archive for this storm</span>')}
+function trackTakeaway(){const st=trackStats('easter2026'),j=trackStats('jan2025');if(!st.ifs||!st.aifs)return;
+ document.getElementById('tk-track').textContent=`The day-ahead forecasts put the Easter low within about ${Math.round(Math.max(st.ifs.km,st.aifs.km)/10)*10} km of where it went, so the misses below are in the strength of the wind, not the path of the storm.`}
+
+/* 2. Footprint small multiples */
+let ftS='easter2026';
+function footprint(s,k){const d=storms[s][k],n=d.u[0].length,out=new Array(n).fill(0);for(let t=0;t<d.u.length;t++){const w=wsOf(s,k,t);for(let i=0;i<n;i++)if(w[i]>out[i])out[i]=w[i]}return out}
+function areaAbove(fp,m,thr){let a=0;const nx=m.lon.length;fp.forEach((v,i)=>{if(v>=thr){const lat=m.lat[Math.floor(i/nx)];a+=55.6*55.6*Math.cos(lat*Math.PI/180)}});return a}
+function drawFoot(){const d=storms[ftS],m=d.meta,box=document.getElementById('foot'),keys=['era5','ifs','aifs','knmi'];
+ box.innerHTML=keys.map(k=>`<div class="cell"><div class="ttl"><span>${k==='era5'?'ERA5, what happened':SRC_NAME[k]+', day before'}</span><span id="fa-${k}"></span></div><div class="cv" style="aspect-ratio:1.118"><canvas id="fc-${k}"></canvas></div></div>`).join('');
+ for(const k of keys){const c=document.getElementById('fc-'+k),[ctx,W,H]=fit(c),P=proj(BOX,W,H);
+  if(!d[k]){ctx.fillStyle='#f3f1ed';ctx.fillRect(0,0,W,H);coastDraw(ctx,coast,P,null,'#c5cbd3',.6);ctx.fillStyle='#5b6470';ctx.font='12px IBM Plex Sans';ctx.textAlign='center';ctx.fillText('no archive before February 2025',W/2,H/2);document.getElementById('fa-'+k).textContent='';continue}
+  const fp=footprint(ftS,k);paint(ctx,W,H,P,(lon,lat)=>sampleG(fp,lon,lat,m),col,110);
+  coastDraw(ctx,coast,P,'rgba(255,255,255,.18)','rgba(31,41,51,.8)',.7);
+  contourLines(ctx,W,H,P,BOX,(lon,lat)=>sampleG(fp,lon,lat,m),[27],{strokeStyle:'#1a1d21',lineWidth:1.6},false);
+  document.getElementById('fa-'+k).textContent=`${(areaAbove(fp,m,27)/1000).toFixed(0)}k km² ≥ 27`}}
+function footTakeaway(){const d=storms.easter2026,m=d.meta,a={};for(const k of ['era5','ifs','aifs','knmi'])a[k]=areaAbove(footprint('easter2026',k),m,27);
+ const mae=k=>{let s=0,n=0;for(let t=0;t<d.meta.time.length;t++){const f=wsOf('easter2026',k,t),e=wsOf('easter2026','era5',t);f.forEach((v,i)=>{s+=Math.abs(v-e[i]);n++})}return s/n};
+ const ma=mae('aifs'),mi=mae('ifs'),mk=mae('knmi');
+ document.getElementById('tk-foot').textContent=`AIFS had the smallest average error at Easter (${ma.toFixed(1)} m/s, against ${mi.toFixed(1)} for IFS), yet its area of winds above 27 m/s was ${Math.round(100*(1-a.aifs/a.era5))}% smaller than in ERA5${a.aifs<a.ifs&&a.aifs<a.knmi?`, against ${Math.round(100*(1-a.ifs/a.era5))}% for IFS and ${Math.round(100*(1-a.knmi/a.era5))}% for KNMI HARMONIE`:''}.`}
+
+/* 3. Error map */
+let erS='easter2026',erK='aifs',erT=31,erPlay=false;
+function drawErr(){const c=document.getElementById('err'),[ctx,W,H]=fit(c),P=proj(BOX,W,H),d=storms[erS],m=d.meta;if(!d[erK])return;
+ const f=wsOf(erS,erK,erT),e=wsOf(erS,'era5',erT);const diff=f.map((v,i)=>v-e[i]);
+ paint(ctx,W,H,P,(lon,lat)=>sampleG(diff,lon,lat,m),v=>divCol(v,5),150);
+ coastDraw(ctx,coast,P,null,'rgba(31,41,51,.85)',.9);
+ contourLines(ctx,W,H,P,BOX,(lon,lat)=>sampleG(d.era5.p[erT],lon,lat,m),isoTh,{strokeStyle:'rgba(91,100,112,.6)',lineWidth:.8},W>380);
+ contourLines(ctx,W,H,P,BOX,(lon,lat)=>sampleG(e,lon,lat,m),[20],{strokeStyle:'#1a1d21',lineWidth:1.6,dash:[5,4]},false);
+ let sc=0,nc=0,sa=0,mx=0,mf=0;diff.forEach((v,i)=>{sa+=Math.abs(v);if(e[i]>=20){sc+=v;nc++}if(e[i]>mx)mx=e[i];if(f[i]>mf)mf=f[i]});
+ document.getElementById('err-when').textContent=tlab(m.time[erT]);
+ document.getElementById('err-stat').innerHTML=`<span>mean absolute error, whole map: <b class="num">${(sa/diff.length).toFixed(1)} m/s</b></span><span style="margin-left:14px">${nc?`inside the dashed core: <b class="num">${(sc/nc>0?'+':'')+(sc/nc).toFixed(1)} m/s</b>`:'no wind above 20 m/s this hour'}</span><span style="margin-left:14px">strongest: ERA5 <span class="num">${mx.toFixed(1)}</span>, forecast <span class="num">${mf.toFixed(1)}</span> m/s</span>`}
+function errTakeaway(){const d=storms.easter2026,r={};for(const k of ['ifs','aifs','knmi']){let s=0,n=0;for(let t=0;t<d.meta.time.length;t++){const f=wsOf('easter2026',k,t),e=wsOf('easter2026','era5',t);e.forEach((v,i)=>{if(v>=20){s+=f[i]-v;n++}})}r[k]=s/n}
+ document.getElementById('tk-err').textContent=`Every forecast was too weak where the Easter storm blew hardest, by ${Math.abs(Math.max(r.ifs,r.aifs,r.knmi)).toFixed(1)} to ${Math.abs(Math.min(r.ifs,r.aifs,r.knmi)).toFixed(1)} m/s on average wherever ERA5 exceeded 20 m/s, and each model missed in its own places.`}
+
+/* 4. Hovmoller */
+let hvS='easter2026',hvK='aifs';
+function hovField(s,k){const d=storms[s],m=d.meta,nx=m.lon.length,rows=m.lat.map((l,j)=>l>=54.5&&l<=57.5?j:-1).filter(j=>j>=0);
+ return d[k].u.map((_,t)=>{const w=wsOf(s,k,t);return m.lon.map((_,i)=>rows.reduce((a,j)=>a+w[j*nx+i],0)/rows.length)})}
+function ridge(F){const nt=F.length,nx=F[0].length,sm=F.map((r,t)=>r.map((_,i)=>{let s=0,n=0;for(let q=Math.max(0,t-2);q<=Math.min(nt-1,t+2);q++){s+=F[q][i];n++}return s/n}));
+ /* follow one ridge: start at the strongest point, then step east and west allowing a few hours of drift per column */
+ let gi=0,gt=0;sm.forEach((r,t)=>r.forEach((v,i)=>{if(v>sm[gt][gi]){gt=t;gi=i}}));const out=new Array(nx);out[gi]=gt;
+ const best=(i,a,b)=>{let k=Math.max(0,a);for(let t=Math.max(0,a);t<=Math.min(nt-1,b);t++)if(sm[t][i]>sm[k][i])k=t;return k};
+ for(let i=gi+1;i<nx;i++)out[i]=best(i,out[i-1]-2,out[i-1]+4);for(let i=gi-1;i>=0;i--)out[i]=best(i,out[i+1]-4,out[i+1]+2);return out}
+function drawHov(){const d=storms[hvS],m=d.meta,box=document.getElementById('hov'),E=hovField(hvS,'era5'),F=hovField(hvS,hvK),rE=ridge(E),rF=ridge(F),nt=m.time.length,nx=m.lon.length;
+ box.innerHTML=`<div></div><div class="ttl">ERA5, what happened</div><div class="ttl">${SRC_NAME[hvK]}, day before</div><div class="cv" id="hv-ax" style="height:360px"></div>`+['e','f'].map(x=>`<div class="cv" style="height:360px"><canvas id="hv-${x}"></canvas></div>`).join('')+`<div></div><div class="axl" style="display:flex;justify-content:space-between">${[6,8,10,12,14,16].map(v=>`<span class="${v%4?'m':''}">${v}°E</span>`).join('')}</div><div class="axl" style="display:flex;justify-content:space-between">${[6,8,10,12,14,16].map(v=>`<span class="${v%4?'m':''}">${v}°E</span>`).join('')}</div>`;
+ const ax=document.getElementById('hv-ax');ax.innerHTML=m.time.map((t,i)=>i%12?'':`<div class="axl" style="position:absolute;right:0;top:${(i+.5)/nt*100}%;transform:translateY(-50%);text-align:right;line-height:1.1">${tshort(t).split(' ')[0]}<br>${t.slice(11,13)}h</div>`).join('');
+ for(const [id,G,r] of [['hv-e',E,null],['hv-f',F,rF]]){const c=document.getElementById(id),[ctx,W,H]=fit(c),img=ctx.createImageData(nx,nt);
+  G.forEach((row,t)=>row.forEach((v,i)=>img.data.set([...col(v),255],(t*nx+i)*4)));const off=document.createElement('canvas');off.width=nx;off.height=nt;off.getContext('2d').putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(off,0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=.6;for(let t=0;t<nt;t+=12){ctx.beginPath();ctx.moveTo(0,(t+.5)/nt*H);ctx.lineTo(W,(t+.5)/nt*H);ctx.stroke()}
+  const line=(rr,cl,dash)=>{ctx.save();ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.beginPath();rr.forEach((t,i)=>{const X=(i+.5)/nx*W,Y=(t+.5)/nt*H;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.stroke();ctx.strokeStyle=cl;ctx.lineWidth=2;if(dash)ctx.setLineDash(dash);ctx.stroke();ctx.restore()};
+  line(rE,'#1a1d21');if(r)line(r,SRC_COL[hvK],[5,3])}}
+function hovTakeaway(){const m=storms.easter2026.meta,E=ridge(hovField('easter2026','era5')),A=ridge(hovField('easter2026','aifs')),I=ridge(hovField('easter2026','ifs'));
+ const i8=m.lon.indexOf(8),i14=m.lon.indexOf(14);
+ const ph=d=>d===0?'on time':`${Math.abs(d)} hour${Math.abs(d)>1?'s':''} ${d>0?'late':'early'}`,da=A[i8]-E[i8],di=I[i8]-E[i8];
+ document.getElementById('tk-hov').textContent=`The strongest Easter wind took about ${E[i14]-E[i8]} hours to cross from the west coast (8°E) to the Baltic (14°E); at the west coast ${da===di?`both AIFS and IFS brought it ${ph(da)}`:`AIFS brought it ${ph(da)} and IFS ${ph(di)}`}.`}
+
+/* 5. Site error map */
+let SE=null,seK='blend',seSel='lolland';
+const SITE_NAME={horns_rev1:'Horns Rev 1',horns_rev2:'Horns Rev 2',horns_rev3:'Horns Rev 3',thor:'Thor',vesterhav_nord:'Vesterhav Nord',vesterhav_syd:'Vesterhav Syd',anholt:'Anholt',kriegers_flak:'Kriegers Flak',rodsand:'Rødsand',samso:'Samsø',sprogo:'Sprogø',frederikshavn:'Frederikshavn',middelgrunden:'Middelgrunden',ringkobing:'Ringkøbing',lemvig:'Lemvig',thisted:'Thisted',hjorring:'Hjørring',herning:'Herning',varde:'Varde',tonder:'Tønder',vesthimmerland:'Vesthimmerland',djursland:'Djursland',aabenraa:'Aabenraa',skive:'Skive',jammerbugt:'Jammerbugt',fyn:'Funen',viborg:'Viborg',horsens:'Horsens',lolland:'Lolland',falster:'Falster',w_zealand:'West Zealand',s_zealand:'South Zealand',n_zealand:'North Zealand',bornholm:'Bornholm'};
+const OFFSHORE=new Set(['horns_rev1','horns_rev2','horns_rev3','thor','vesterhav_nord','vesterhav_syd','anholt','kriegers_flak','rodsand','sprogo','middelgrunden','samso','frederikshavn']);
+const SE_BTN={blend:'Blend',ecmwf_aifs025_single:'AIFS',ecmwf_ifs025:'IFS',icon_d2:'ICON-D2',dmi_harmonie_arome_europe:'DMI HARMONIE'};
+function drawSites(){const w=860,h=Math.round(w/1.118),X=lon=>(lon-LON0)/(LON1-LON0)*w,Y=lat=>(LAT1-lat)/(LAT1-LAT0)*h;
+ let svg=`<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+ for(const r of coast)svg+=`<path d="M${r.map(([x,y])=>X(x).toFixed(1)+','+Y(y).toFixed(1)).join('L')}Z" fill="#fbfaf7" stroke="#8b95a1" stroke-width="0.8"/>`;
+ const ents=Object.entries(SE.sites).sort((a,b)=>b[1][seK][0]-a[1][seK][0]),R=e=>4+Math.max(0,e-0.6)*20;
+ for(const [k,s] of ents){const [e,b]=s[seK],sel=k===seSel;svg+=`<circle cx="${X(s.lon).toFixed(1)}" cy="${Y(s.lat).toFixed(1)}" r="${R(e).toFixed(1)}" fill="${rgb(divCol(b,1.2))}" stroke="${sel?'#1a1d21':'#5b6470'}" stroke-width="${sel?2.5:1}" data-k="${k}" style="cursor:pointer"/>`}
+ const top=ents.slice(0,4).map(([k])=>k),boxes=[];
+ const hit=(x0,x1,y0,y1,own)=>ents.some(([k2,s2])=>k2!==own&&X(s2.lon)+R(s2[seK][0])>x0&&X(s2.lon)-R(s2[seK][0])<x1&&Y(s2.lat)+R(s2[seK][0])>y0&&Y(s2.lat)-R(s2[seK][0])<y1)||boxes.some(b=>b[0]<x1&&b[1]>x0&&b[2]<y1&&b[3]>y0);
+ for(const k of new Set([...top,seSel])){const s=SE.sites[k],r=R(s[seK][0]),cx=X(s.lon),cy=Y(s.lat),tw=SITE_NAME[k].length*9.3;
+  const opts=[[cx+r+4,cy+5,'start',cx+r+4,cx+r+4+tw],[cx-r-4,cy+5,'end',cx-r-4-tw,cx-r-4],[cx,cy+r+16,'middle',cx-tw/2,cx+tw/2],[cx,cy-r-6,'middle',cx-tw/2,cx+tw/2]];
+  const o=opts.find(o=>!hit(o[3],o[4],o[1]-12,o[1]+3,k))||opts[0];boxes.push([o[3],o[4],o[1]-12,o[1]+3]);
+  svg+=`<text x="${o[0]}" y="${o[1]}" text-anchor="${o[2]}" font-family="IBM Plex Sans" font-size="17" fill="#1a1d21" paint-order="stroke" stroke="#fff" stroke-width="3">${SITE_NAME[k]}</text>`}
+ let ly=28;svg+=`<text x="${w-230}" y="${ly}" font-family="IBM Plex Mono" font-size="12" fill="#5b6470">RMSE, m/s</text>`;
+ for(const e of [0.9,1.2,1.5]){ly+=R(e)+12;svg+=`<circle cx="${w-210}" cy="${ly}" r="${R(e)}" fill="none" stroke="#5b6470"/><text x="${w-185}" y="${ly+4}" font-family="IBM Plex Mono" font-size="12" fill="#1a1d21">${e.toFixed(1)}</text>`;ly+=R(e)}
+ ly+=26;svg+=`<text x="${w-230}" y="${ly}" font-family="IBM Plex Mono" font-size="12" fill="#5b6470">bias, m/s</text>`;
+ [-1.2,-0.6,0,0.6,1.2].forEach((b,i)=>{svg+=`<rect x="${w-230+i*36}" y="${ly+8}" width="36" height="10" fill="${rgb(divCol(b,1.2))}"/><text x="${w-230+i*36+18}" y="${ly+32}" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#1a1d21">${b>0?'+':''}${b}</text>`});
+ svg+='</svg>';document.getElementById('site-svg').innerHTML=svg;
+ document.querySelectorAll('#site-svg circle[data-k]').forEach(c=>{const k=c.dataset.k;c.onclick=()=>{seSel=k;drawSites()};
+  c.onmouseenter=ev=>{const t=document.getElementById('tip5'),r=document.getElementById('sitemap').getBoundingClientRect(),s=SE.sites[k];t.style.display='block';t.style.left=Math.min(ev.clientX-r.left+12,r.width-170)+'px';t.style.top=(ev.clientY-r.top+12)+'px';
+   t.innerHTML=`<b>${SITE_NAME[k]}</b> <span style="color:#5b6470">${OFFSHORE.has(k)?'offshore farm':'onshore cluster'}</span><br>${SE_BTN[seK]}: RMSE <span class="num">${s[seK][0].toFixed(2)}</span>, bias <span class="num">${(s[seK][1]>0?'+':'')+s[seK][1].toFixed(2)}</span> m/s`};
+  c.onmouseleave=()=>document.getElementById('tip5').style.display='none'});
+ drawRose()}
+function drawRose(){const s=SE.sites[seSel],sc=72/1.5,fr=Math.max(...s.rose_freq);let g='';
+ for(const [r,l] of [[0.5,'0.5'],[1,'1.0'],[1.5,'1.5']])g+=`<circle r="${r*sc}" fill="none" stroke="#e2e0dc"/><text x="2" y="${-r*sc-2}" font-family="IBM Plex Mono" font-size="8" fill="#8b95a1">${l}</text>`;
+ const wedge=(i,r)=>{const a0=(i*30-15)*Math.PI/180,a1=(i*30+15)*Math.PI/180;return `M0,0L${(r*Math.sin(a0)).toFixed(1)},${(-r*Math.cos(a0)).toFixed(1)}A${r},${r} 0 0 1 ${(r*Math.sin(a1)).toFixed(1)},${(-r*Math.cos(a1)).toFixed(1)}Z`};
+ s.rose_freq.forEach((f,i)=>{g+=`<path d="${wedge(i,f/fr*86)}" fill="#2c4a6b" opacity="0.07"/>`});
+ s.rose_bias.forEach((b,i)=>{if(b==null)return;g+=`<path d="${wedge(i,Math.min(1.7,Math.abs(b))*sc)}" fill="${rgb(divCol(b,1.2))}" stroke="${b>0?'#b2182b':'#2166ac'}" stroke-width="0.8"/>`});
+ for(const [t,x,y] of [['N',0,-90],['E',91,3],['S',0,97],['W',-91,3]])g+=`<text x="${x}" y="${y}" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#5b6470">${t}</text>`;
+ document.getElementById('rose').innerHTML=g;
+ const b=s.rose_bias.map((v,i)=>[v,i]).filter(q=>q[0]!=null).sort((a,c)=>Math.abs(c[0])-Math.abs(a[0]))[0],dir=['north','north-northeast','east-northeast','east','east-southeast','south-southeast','south','south-southwest','west-southwest','west','west-northwest','north-northwest'][b[1]];
+ document.getElementById('site-txt').innerHTML=`<b>${SITE_NAME[seSel]}</b>, ${OFFSHORE.has(seSel)?'offshore farm':'onshore cluster'}. Blend of 8 models: RMSE <span class="num">${s.blend[0].toFixed(2)}</span> m/s, mean bias <span class="num">${(s.blend[1]>0?'+':'')+s.blend[1].toFixed(2)}</span> m/s over <span class="num">${s.n.toLocaleString('en')}</span> hours. The bias is largest, <span class="num">${(b[0]>0?'+':'')+b[0].toFixed(1)}</span> m/s, when the wind blows from the ${dir}.<br><span style="color:var(--soft)">Red petals: forecast too strong; blue: too weak.</span>`}
+function siteTakeaway(){const ents=Object.entries(SE.sites).map(([k,s])=>[k,s.blend[0]]).sort((a,b)=>b[1]-a[1]),top=ents.slice(0,4),rest=ents.slice(4).map(q=>q[1]).sort((a,b)=>a-b),med=rest[Math.floor(rest.length/2)];
+ document.getElementById('tk-site').textContent=`The blend's 100 m wind is least accurate at ${top.map(q=>SITE_NAME[q[0]]).slice(0,3).join(', ')} and ${SITE_NAME[top[3][0]]}, about ${(top.reduce((a,q)=>a+q[1],0)/4).toFixed(1)} m/s against ${med.toFixed(1)} m/s at the typical site, where models and ERA5 draw the coastline differently.`}
+
+async function anatomy(){
+ [['lbar2',col,28],['lbar4',col,28]].forEach(([id])=>document.getElementById(id).style.background=document.getElementById('lbar').style.background);
+ document.getElementById('lbar3').style.background='linear-gradient(90deg,'+DIV.map(([v,c])=>`${rgb(c)} ${(v+1)*50}%`).join(',')+')';
+ await Promise.all([getStorm('easter2026'),getStorm('jan2025')]);
+ const [tr,cw,se]=await Promise.all([fetch('data/tracks.json').then(r=>r.json()),fetch('data/coast_wide.json').then(r=>r.json()),fetch('data/sites.json').then(r=>r.json())]);TR=tr;CW=cw;SE=se;
+ trackTakeaway();footTakeaway();errTakeaway();hovTakeaway();siteTakeaway();
+ document.getElementById('site-src').innerHTML=Object.entries(SE_BTN).map(([k,n])=>`<button data-k="${k}" class="${k===seK?'on':''}">${n}</button>`).join('');
+ segWire('site-src',k=>{seK=k;drawSites()});
+ segWire('trk-storm',s=>{trS=s;trT=Math.min(trT,TR[s].meta.time.length-1);drawTrack()});
+ segWire('foot-storm',s=>{ftS=s;drawFoot()});
+ segWire('err-storm',s=>{erS=s;erK=setDisabled('err-src',s);drawErr()});
+ segWire('err-src',k=>{erK=k;drawErr()});
+ segWire('hov-storm',s=>{hvS=s;hvK=setDisabled('hov-src',s);drawHov()});
+ segWire('hov-src',k=>{hvK=k;drawHov()});
+ const slider=(id,get,set,draw,playId,flag)=>{const el=document.getElementById(id);el.oninput=e=>{set(+e.target.value);flag(false);document.getElementById(playId).textContent='Play';draw()};
+  document.getElementById(playId).onclick=()=>{const p=!flag();flag(p);document.getElementById(playId).textContent=p?'Pause':'Play'}};
+ slider('trk-t',()=>trT,v=>trT=v,drawTrack,'trk-play',v=>v===undefined?trPlay:(trPlay=v));
+ slider('err-t',()=>erT,v=>erT=v,drawErr,'err-play',v=>v===undefined?erPlay:(erPlay=v));
+ let last=0;const loop=ts=>{if(ts-last>600){last=ts;if(trPlay){trT=(trT+1)%72;document.getElementById('trk-t').value=trT;drawTrack()}if(erPlay){erT=(erT+1)%72;document.getElementById('err-t').value=erT;drawErr()}}requestAnimationFrame(loop)};requestAnimationFrame(loop);
+ const all=()=>{drawTrack();drawFoot();drawErr();drawHov();drawSites()};all();
+ let rt=null;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{drawTrack();drawFoot();drawErr();drawHov()},150)});
+ document.getElementById('trk-wrap').onmousemove=ev=>{const r=ev.currentTarget.getBoundingClientRect(),P=proj(TBOX,r.width,r.height),lon=P.lon(ev.clientX-r.left),lat=P.lat(ev.clientY-r.top),d=TR[trS],v=sampleG(d.era5.p[trT],lon,lat,d.meta),t=document.getElementById('tip3');
+  if(v==null){t.style.display='none';return}t.style.display='block';t.style.left=Math.min(ev.clientX-r.left+12,r.width-110)+'px';t.style.top=(ev.clientY-r.top+12)+'px';t.innerHTML=`ERA5 <span class="num">${v.toFixed(0)} hPa</span>`};
+ document.getElementById('trk-wrap').onmouseleave=()=>document.getElementById('tip3').style.display='none';
+ document.getElementById('err-wrap').onmousemove=ev=>{const r=ev.currentTarget.getBoundingClientRect(),P=proj(BOX,r.width,r.height),lon=P.lon(ev.clientX-r.left),lat=P.lat(ev.clientY-r.top),m=storms[erS].meta,
+  f=sampleG(wsOf(erS,erK,erT),lon,lat,m),e=sampleG(wsOf(erS,'era5',erT),lon,lat,m),t=document.getElementById('tip4');if(f==null){t.style.display='none';return}
+  t.style.display='block';t.style.left=Math.min(ev.clientX-r.left+12,r.width-170)+'px';t.style.top=(ev.clientY-r.top+12)+'px';t.innerHTML=`ERA5 <span class="num">${e.toFixed(1)}</span>, forecast <span class="num">${f.toFixed(1)}</span> m/s`};
+ document.getElementById('err-wrap').onmouseleave=()=>document.getElementById('tip4').style.display='none';
+}
 </script>
 </body>
 </html>

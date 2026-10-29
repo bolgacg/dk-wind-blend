@@ -56,6 +56,94 @@ def coast():
     return rings
 
 
+def coast_wide(box=(-6.0, 50.0, 24.0, 65.0), tol=0.05):
+    """Thinned coastline for the wide storm-track map."""
+    g = json.load(open(ROOT / "data" / "raw" / "geo" / "ne_10m_land.geojson"))
+    rings = []
+    for ft in g["features"]:
+        geom = ft["geometry"]; polys = geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
+        for poly in polys:
+            r = clip_ring(poly[0], *box)
+            if len(r) < 4: continue
+            a = np.array(r)
+            if np.ptp(a[:, 0]) < 0.25 and np.ptp(a[:, 1]) < 0.15: continue
+            keep = [a[0]]
+            for q in a[1:]:
+                if np.hypot(*(q - keep[-1])) > tol: keep.append(q)
+            if len(keep) > 3:
+                rings.append([[round(float(x), 2), round(float(y), 2)] for x, y in keep])
+    json.dump(rings, open(D / "coast_wide.json", "w"), separators=(",", ":"))
+
+
+def low_track(p, lat, lon):
+    """Low centre per hour: grid minimum refined with a parabola in each direction; None when it sits on the box edge."""
+    ny, nx, nt = p.shape; out = []
+    for t in range(nt):
+        a = p[:, :, t]
+        if np.isnan(a).all(): out.append(None); continue
+        j, i = np.unravel_index(np.nanargmin(a), a.shape)
+        if j in (0, ny - 1) or i in (0, nx - 1): out.append(None); continue
+        def para(m1, c, p1):
+            d = m1 - 2 * c + p1
+            return 0.0 if d <= 0 else float(np.clip(0.5 * (m1 - p1) / d, -0.5, 0.5))
+        dy, dx = para(a[j - 1, i], a[j, i], a[j + 1, i]), para(a[j, i - 1], a[j, i], a[j, i + 1])
+        if np.isnan(dy) or np.isnan(dx): dy = dx = 0.0
+        out.append([round(float(lon[0] + (i + dx) * (lon[1] - lon[0])), 2), round(float(lat[0] + (j + dy) * (lat[1] - lat[0])), 2),
+                    round(float(a[j, i]), 1)])
+    return out
+
+
+def tracks():
+    out = {}
+    for f in sorted((C / "track").glob("*.npz")):
+        z = np.load(f); storm, src = f.stem.split("_", 1)
+        p = z["mslp"]; lat, lon = z["lat"], z["lon"]
+        if np.isnan(p).all(): continue  # KNMI HARMONIE has no sea level pressure in the previous-runs archive
+        d = out.setdefault(storm, {"meta": dict(time=[str(t) for t in z["time"]], lat=lat.tolist(), lon=lon.tolist())})
+        pts, segs, cur = low_track(p, lat, lon), [], []
+        for t, q in enumerate(pts):  # split where the minimum jumps to another low, keep the longest run
+            if q is None or (cur and np.hypot(q[0] - cur[-1][1], q[1] - cur[-1][2]) > 4.0):
+                if cur: segs.append(cur)
+                cur = []
+            if q is not None: cur.append([t] + q)
+        if cur: segs.append(cur)
+        d[src] = dict(track=max(segs, key=len) if segs else [],
+                      p=np.round(p, 1).transpose(2, 0, 1).reshape(p.shape[2], -1).tolist())
+    for d in out.values():
+        for k, v in d.items():
+            if k != "meta":
+                v["p"] = [[None if x != x else x for x in row] for row in v["p"]]
+    json.dump(out, open(D / "tracks.json", "w"), separators=(",", ":"))
+    return out
+
+
+def site_errors():
+    """Day-ahead 100 m wind error per site against ERA5, March 2025 onward: RMSE and bias for each model and the blend,
+    and the blend's bias by ERA5 wind direction in 12 sectors of 30 degrees."""
+    era = pd.read_parquet(C / "era5.parquet", columns=["time", "point", "ws100", "wd100"])
+    era = era[era.time >= "2025-03-01"]; era["point"] = era.point.astype(str); era = era.set_index(["time", "point"])
+    fc = {}
+    for f in sorted((C / "fc").glob("*.parquet")):
+        d = pd.read_parquet(f, columns=["time", "point", "lead", "ws100"]); d = d[(d.lead == 1) & (d.time >= "2025-03-01")]
+        d["point"] = d.point.astype(str); fc[f.stem] = d.set_index(["time", "point"]).ws100.astype(float)
+    m = era.join(pd.DataFrame(fc), how="inner"); models = list(fc)
+    m["blend"] = m[models].mean(axis=1); m = m.dropna(subset=["blend", "ws100"])
+    m["sec"] = ((m.wd100 + 15) // 30 % 12).astype(int)
+    res = {"models": ["blend"] + models, "sites": {}}
+    for pt, g in m.groupby(level="point"):
+        r = {}
+        for c in res["models"]:
+            e = (g[c] - g.ws100).dropna()
+            r[c] = [round(float(np.sqrt((e ** 2).mean())), 2), round(float(e.mean()), 2)]
+        e = g.blend - g.ws100
+        r["rose_bias"] = e.groupby(g.sec).mean().reindex(range(12)).round(2).tolist()
+        r["rose_freq"] = (100 * g.sec.value_counts(normalize=True).reindex(range(12)).fillna(0)).round(1).tolist()
+        r["lat"], r["lon"] = POINTS[pt]; r["n"] = int(len(g))
+        res["sites"][pt] = r
+    json.dump(res, open(D / "sites.json", "w"), separators=(",", ":"))
+    return res
+
+
 def storms():
     out = {}
     for f in sorted((C / "storm").glob("*.npz")):
@@ -91,7 +179,7 @@ def station_scores():
 
 
 def main():
-    rings = coast(); st = storms()
+    rings = coast(); st = storms(); coast_wide(); tracks(); site_errors()
     era = pd.read_csv(R / "scorecard_era5.csv"); era = era[(era.kind == "all") & (era.lead == 1)].set_index("model")
     sta = pd.read_csv(R / "scorecard_stations.csv").set_index("model") if (R / "scorecard_stations.csv").exists() else None
     best, sc = station_scores()
