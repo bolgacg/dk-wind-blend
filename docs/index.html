@@ -102,7 +102,7 @@ a{color:var(--accent)}
 <table id="ptable"><thead><tr><th>Forecast, test Jan to Oct 2026</th><th style="text-align:right">DK1 error</th><th style="text-align:right">DK2 error</th></tr></thead><tbody></tbody></table>
 <p class="hint">Error is mean absolute error as a percentage of installed capacity. Energinet's forecast is rescaled on 2025 so that it is judged fairly. Its DK1 offshore series is capped near 1,000 MW while the fleet peaks near 2,000 MW, so DK2 is the cleaner comparison.</p>
 
-<h2>The worst day was not a weather failure</h2>
+<h2>The gusts were right, the electricity was not</h2>
 <p>The blend's worst days were 5 and 6 April 2026, Easter Sunday and Monday. The forecast had the wind right. But demand was low on the holiday, the day-ahead price went negative, and wind farms were switched off. DK2 output fell to about 30% of capacity in the middle of a gale.</p>
 <figure><img src="fig_easter_DK2.png" alt="DK2 wind output 3 to 7 April 2026: the blend forecast stays near 85% of capacity while actual output drops to 30% during the hours shaded for negative prices."><figcaption>DK2 wind output, 3 to 7 April 2026, against the blend, its 10 to 90% band and AIFS alone. Shaded hours had a negative day-ahead price.</figcaption></figure>
 <div class="callout"><p>Across all gale hours in 2026, the blend over-forecast DK2 by about half of capacity when the price was negative. When the price was positive, it was close to unbiased. Adding gusts, wind shear and a cut-out flag barely changed the gale error, so the misses are about the market, not turbines shutting down in high wind. <span id="galefix"></span></p></div>
@@ -116,7 +116,7 @@ a{color:var(--accent)}
 <div class="warn"><p><strong>Limits.</strong> The test covers ten months of 2026, with one train and test split and only three strong storms, so rankings a few tenths apart are ties. ERA5 flatters smooth models, which is why every model is also scored against stations. Installed capacity is estimated from each area's 60-day peak output, because Thor was coming online during the test.</p></div>
 
 <h2>Data and method</h2>
-<p>Forecasts are Open-Meteo's archive of each model's runs as issued one day earlier: ECMWF IFS and AIFS, DWD ICON-EU and ICON-D2, NOAA GFS, the UK Met Office, DMI HARMONIE and KNMI HARMONIE. Truth is ERA5 and DMI's open station observations. Production and prices come from Energinet's Energi Data Service. Neural models were trained on a GTX 1060. A live version of the forecast is issued every day before the 12:00 day-ahead auction and scored afterwards.</p>
+<p>Forecasts are Open-Meteo's archive of each model's runs as issued one day earlier: ECMWF IFS and AIFS, DWD ICON-EU and ICON-D2, NOAA GFS, the UK Met Office, DMI HARMONIE and KNMI HARMONIE. Truth is ERA5 and DMI's open station observations. Production and prices come from Energinet's Energi Data Service. Neural models were trained on a GTX 1060. A live version of the forecast is issued every day before the 12:00 day-ahead auction and scored afterwards: see the <a href="https://bolgacg.github.io/dk-wind-live/">daily league table</a>.</p>
 <footer>Bolgaç Gülen, October 2026. Code and data pipeline: <a href="https://github.com/bolgacg/dk-wind-blend">github.com/bolgacg/dk-wind-blend</a>. <a href="denmark-wind-model-study.pdf">Report as PDF</a>. Coastlines from Natural Earth.</footer>
 </div>
 
@@ -200,7 +200,7 @@ function tables(S){const lab=f=>({blend_equal:'Blend: average of 8 models',blend
   ...S.emos.filter(r=>r.forecast.startsWith('single')).sort((x,y)=>x.crps_ms-y.crps_ms).slice(0,1).map(r=>['Best single model (AIFS)',r.crps_ms])].sort((x,y)=>x[1]-y[1]);
  $('#etable tbody').innerHTML=rows.map(([n,v],i)=>`<tr class="${i?'':'best'}"><td>${n}</td><td class="n">${(+v).toFixed(2)}</td></tr>`).join('');
  const g=S.gale.filter(r=>r.area==='DK2'&&r.subset==='gale >15, price <= 0'),base=g.find(r=>r.model==='baseline'),post=g.find(r=>r.model.startsWith('after'));
- if(base&&post)$('#galefix').textContent=`The measured remedy: once the day-ahead price is known after the auction, adding it to the model cuts the DK2 error in those hours from ${base.nmae_pct.toFixed(0)}% to ${post.nmae_pct.toFixed(0)}% of capacity, which matters for intraday trading.`}
+ if(base&&post)$('#galefix').textContent=`Knowing the price would fix most of it, but the price is set at the 12:00 auction, after the 10:30 forecast is made. Using it would be look-ahead for the day-ahead forecast. It is fair only for intraday trading after the auction, where adding it cuts the DK2 error in those hours from ${base.nmae_pct.toFixed(0)}% to ${post.nmae_pct.toFixed(0)}% of capacity. A first attempt to predict negative prices at 10:30 ranked the risky hours well but gave probabilities too low to act on, so before the auction these hours remain the open problem.`}
 (async()=>{const [c,s]=await Promise.all([fetch('data/coast.json').then(r=>r.json()),fetch('data/summary.json').then(r=>r.json())]);coast=c;
  stationMap(s,c);tables(s);await loadStorm('easter2026');resize();window.addEventListener('resize',resize);requestAnimationFrame(step);requestAnimationFrame(tick)})();
 </script>
