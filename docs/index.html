@@ -81,7 +81,7 @@ a{color:var(--accent)}
 <p class="stand">Blending eight public weather models forecasts Danish wind power better than any one of them, and better than the grid operator's own day-ahead forecast. Which single model is best depends on what you count as the truth. And the worst forecast day of 2026 was not a weather failure at all.</p>
 
 <div class="kpis">
- <div><div class="k">DK2 power error</div><div class="v">6.6%</div><div class="s">blend of 8 models, against 7.6% for Energinet's day-ahead</div></div>
+ <div><div class="k">DK2 power error</div><div class="v">6.6%</div><div class="s">blend of 8 models, against 7.0% for Energinet's day-ahead in its toughest version</div></div>
  <div><div class="k">Best at real stations</div><div class="v">ICON-EU</div><div class="s">ECMWF's AI model wins against ERA5, but is fifth at 36 DMI stations</div></div>
  <div><div class="k">Uncertainty score</div><div class="v">0.50</div><div class="s">m/s CRPS for a neural blend, against 0.81 for the best single model</div></div>
  <div><div class="k">Easter Sunday 2026</div><div class="v">30%</div><div class="s">DK2 output, as a share of capacity, in a gale the forecast got right: prices were negative</div></div>
@@ -174,7 +174,7 @@ a{color:var(--accent)}
 <h2>Blending beats every single model</h2>
 <p>Each model's winds at 34 wind-farm sites were turned into a power forecast with a gradient-boosted mapping, trained on 2025 and tested on 2026. The blend is the plain average of the eight power forecasts, each with equal weight. The weighted mix instead learns how much to trust each model, from the training year. It beats every model on its own, and Energinet's own day-ahead forecast, in both price areas.</p>
 <table id="ptable"><thead><tr><th>Forecast, test Jan to Oct 2026</th><th style="text-align:right">DK1 error</th><th style="text-align:right">DK2 error</th></tr></thead><tbody></tbody></table>
-<p class="hint">Error is mean absolute error as a percentage of installed capacity. Energinet's forecast is rescaled on 2025 so that it is judged fairly. Its DK1 offshore series is capped near 1,000 MW while the fleet peaks near 2,000 MW, so DK2 is the cleaner comparison.</p>
+<p class="hint">Error is mean absolute error as a percentage of installed capacity. Energinet's forecast is shown rescaled on 2025, and also quantile mapped on 2025, its toughest version (DK2 7.0% against 7.6% rescaled), so that it is judged fairly. Its DK1 offshore series is capped near 1,000 MW while the fleet peaks near 2,000 MW, so DK2 is the cleaner comparison.</p>
 
 <h2>The gusts were right, the electricity was not</h2>
 <p>The blend's worst days were 5 and 6 April 2026, Easter Sunday and Monday. The forecast had the wind right. But demand was low on the holiday, the day-ahead price went negative, and wind farms were switched off. DK2 output fell to about 30% of capacity in the middle of a gale.</p>
@@ -265,7 +265,7 @@ function stationMap(S,coast){const w=860,h=Math.round(w/1.118),X=lon=>(lon-LON0)
  box.querySelectorAll('circle[data-n]').forEach(c=>{c.onmouseenter=e=>{const t=$('#tip2'),r=box.getBoundingClientRect();t.style.display='block';
   t.style.left=(e.clientX-r.left+12)+'px';t.style.top=(e.clientY-r.top+12)+'px';t.innerHTML=`<b>${c.dataset.n}</b><br>best: ${c.dataset.m}<br><span class="num">${c.dataset.e} m/s</span> mean error`};
   c.onmouseleave=()=>$('#tip2').style.display='none'})}
-function tables(S){const lab=f=>({blend_equal:'Average of the 8 corrected models',blend_stacked:'Weighted mix of the 8 (learned weights)',energinet_dayahead_recal:'Energinet day-ahead (rescaled)',energinet_dayahead_raw:'Energinet day-ahead (as published)'}[f]||S.names[f]||f);
+function tables(S){const lab=f=>({blend_equal:'Average of the 8 corrected models',blend_stacked:'Weighted mix of the 8 (learned weights)',energinet_dayahead_recal:'Energinet day-ahead (rescaled)',energinet_dayahead_quantile:'Energinet day-ahead (quantile mapped, toughest)',energinet_dayahead_raw:'Energinet day-ahead (as published)'}[f]||S.names[f]||f);
  const a=Object.fromEntries(S.power.DK1.map(r=>[r.forecast,r.nmae_pct])),b=Object.fromEntries(S.power.DK2.map(r=>[r.forecast,r.nmae_pct]));
  const keys=Object.keys(a).sort((x,y)=>(a[x]+b[x])-(a[y]+b[y]));const best=Math.min(...keys.map(k=>a[k]+b[k]));
  $('#ptable tbody').innerHTML=keys.map(k=>`<tr class="${a[k]+b[k]===best?'best':''}"><td>${lab(k)}</td><td class="n">${a[k].toFixed(1)}%</td><td class="n">${b[k].toFixed(1)}%</td></tr>`).join('');
